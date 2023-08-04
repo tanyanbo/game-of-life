@@ -1,5 +1,7 @@
 mod utils;
 
+use std::fmt::Display;
+
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -61,6 +63,10 @@ impl Universe {
         live_count
     }
 
+    pub fn render(&self) -> String {
+        self.to_string()
+    }
+
     fn get_row_col(&self, index: usize) -> (usize, usize) {
         let row = index / self.cols;
         let col = index % self.cols;
@@ -70,5 +76,20 @@ impl Universe {
 
     fn get_index(&self, (row, col): (usize, usize)) -> usize {
         row * self.cols + col
+    }
+}
+
+impl Display for Universe {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for row in 0..self.rows {
+            let cells = &self.cells[(row * self.cols)..((row + 1) * self.cols)]
+                .iter()
+                .map(|v| if *v { '◻' } else { '◼' })
+                .collect::<String>();
+
+            write!(f, "{}\n", cells)?;
+        }
+
+        Ok(())
     }
 }
