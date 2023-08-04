@@ -1,8 +1,14 @@
+use wasm_bindgen::prelude::*;
+use web_sys;
+
 mod utils;
 
-use std::fmt::Display;
-
-use wasm_bindgen::prelude::*;
+// A macro to provide `println!(..)`-style syntax for `console.log` logging.
+macro_rules! log {
+    ( $( $t:tt )* ) => {
+        web_sys::console::log_1(&format!( $( $t )* ).into());
+    }
+}
 
 #[wasm_bindgen]
 pub struct Universe {
@@ -14,9 +20,10 @@ pub struct Universe {
 #[wasm_bindgen]
 impl Universe {
     pub fn new(rows: usize, cols: usize) -> Self {
+        utils::set_panic_hook();
         let mut cells: Vec<bool> = Vec::with_capacity(rows * cols);
-        for i in 0..rows * cols {
-            cells[i] = rand::random();
+        for _ in 0..rows * cols {
+            cells.push(js_sys::Math::random() > 0.5);
         }
 
         Self { rows, cols, cells }
@@ -34,6 +41,7 @@ impl Universe {
                 _ => {}
             }
         }
+        log!("{}", self.render());
     }
 
     fn number_of_live_neighbors(&self, index: usize) -> usize {
@@ -64,7 +72,18 @@ impl Universe {
     }
 
     pub fn render(&self) -> String {
-        self.to_string()
+        let mut result = String::new();
+
+        for row in 0..self.rows {
+            let cells = &self.cells[(row * self.cols)..((row + 1) * self.cols)]
+                .iter()
+                .map(|v| if *v { '◻' } else { '◼' })
+                .collect::<String>();
+
+            result += format!("{}\n", cells).as_str();
+        }
+
+        result
     }
 
     fn get_row_col(&self, index: usize) -> (usize, usize) {
@@ -76,20 +95,5 @@ impl Universe {
 
     fn get_index(&self, (row, col): (usize, usize)) -> usize {
         row * self.cols + col
-    }
-}
-
-impl Display for Universe {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for row in 0..self.rows {
-            let cells = &self.cells[(row * self.cols)..((row + 1) * self.cols)]
-                .iter()
-                .map(|v| if *v { '◻' } else { '◼' })
-                .collect::<String>();
-
-            write!(f, "{}\n", cells)?;
-        }
-
-        Ok(())
     }
 }
