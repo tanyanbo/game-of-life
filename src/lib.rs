@@ -1,5 +1,4 @@
 use wasm_bindgen::prelude::*;
-use web_sys;
 
 mod utils;
 
@@ -30,18 +29,20 @@ impl Universe {
     }
 
     pub fn tick(&mut self) {
+        let mut new_cells = self.cells.clone();
+
         for index in 0..self.cells.len() {
             let live_neighbor_count = self.number_of_live_neighbors(index);
-            let cell = &mut self.cells[index];
+            let cell = &self.cells[index];
 
-            match (&cell, live_neighbor_count) {
-                (false, 3) => *cell = true,
-                (true, x) if (x < 2 || x > 3) => *cell = false,
-                (true, _) => {}
+            match (cell, live_neighbor_count) {
+                (false, 3) => new_cells[index] = true,
+                (true, x) if (x < 2 || x > 3) => new_cells[index] = false,
                 _ => {}
             }
         }
-        log!("{}", self.render());
+
+        self.cells = new_cells;
     }
 
     fn number_of_live_neighbors(&self, index: usize) -> usize {
@@ -61,12 +62,14 @@ impl Universe {
             (next_row, next_col),
             (next_row, col),
             (next_row, prev_col),
+            (row, prev_col),
         ] {
             let index = self.get_index((row, col));
             if self.cells[index] {
                 live_count += 1;
             }
         }
+
 
         live_count
     }
