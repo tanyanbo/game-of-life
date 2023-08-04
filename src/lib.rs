@@ -3,14 +3,6 @@ mod utils;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
-struct Cell {
-    alive: bool,
-}
-
-#[wasm_bindgen]
-impl Cell {}
-
-#[wasm_bindgen]
 pub struct Universe {
     cells: Vec<bool>,
     rows: usize,
@@ -28,7 +20,19 @@ impl Universe {
         Self { rows, cols, cells }
     }
 
-    pub fn tick(&self) {}
+    pub fn tick(&mut self) {
+        for index in 0..self.cells.len() {
+            let live_neighbor_count = self.number_of_live_neighbors(index);
+            let cell = &mut self.cells[index];
+
+            match (&cell, live_neighbor_count) {
+                (false, 3) => *cell = true,
+                (true, x) if (x < 2 || x > 3) => *cell = false,
+                (true, _) => {}
+                _ => {}
+            }
+        }
+    }
 
     fn number_of_live_neighbors(&self, index: usize) -> usize {
         let (row, col) = self.get_row_col(index);
@@ -38,7 +42,8 @@ impl Universe {
         let prev_col = (col + self.cols - 1) % self.cols;
         let next_col = (col + 1) % self.cols;
 
-        let neighbors = [
+        let mut live_count = 0;
+        for (row, col) in [
             (prev_row, prev_col),
             (prev_row, col),
             (prev_row, next_col),
@@ -46,10 +51,7 @@ impl Universe {
             (next_row, next_col),
             (next_row, col),
             (next_row, prev_col),
-        ];
-
-        let mut live_count = 0;
-        for (row, col) in neighbors {
+        ] {
             let index = self.get_index((row, col));
             if self.cells[index] {
                 live_count += 1;
