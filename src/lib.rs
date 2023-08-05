@@ -28,6 +28,10 @@ impl Universe {
         Self { rows, cols, cells }
     }
 
+    pub fn cells(&self) -> *const bool {
+        self.cells.as_ptr()
+    }
+
     pub fn tick(&mut self) {
         let mut new_cells = self.cells.clone();
 
@@ -69,7 +73,6 @@ impl Universe {
                 live_count += 1;
             }
         }
-
 
         live_count
     }
