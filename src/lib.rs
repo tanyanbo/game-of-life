@@ -3,6 +3,13 @@ use wasm_bindgen::prelude::*;
 
 mod utils;
 
+// A macro to provide `println!(..)`-style syntax for `console.log` logging.
+macro_rules! log {
+    ( $( $t:tt )* ) => {
+        web_sys::console::log_1(&format!( $( $t )* ).into());
+    }
+}
+
 #[wasm_bindgen]
 pub struct Universe {
     cells: FixedBitSet,
@@ -24,6 +31,12 @@ impl Universe {
 
     pub fn cells(&self) -> *const u32 {
         self.cells.as_slice().as_ptr()
+    }
+
+    pub fn set(&mut self, index: usize, state: bool) {
+        if index < self.cells.len() {
+            self.cells.set(index, state);
+        }
     }
 
     pub fn tick(&mut self) {
