@@ -1,17 +1,11 @@
+use fixedbitset::FixedBitSet;
 use wasm_bindgen::prelude::*;
 
 mod utils;
 
-// A macro to provide `println!(..)`-style syntax for `console.log` logging.
-macro_rules! log {
-    ( $( $t:tt )* ) => {
-        web_sys::console::log_1(&format!( $( $t )* ).into());
-    }
-}
-
 #[wasm_bindgen]
 pub struct Universe {
-    cells: Vec<bool>,
+    cells: FixedBitSet,
     rows: usize,
     cols: usize,
 }
@@ -20,16 +14,16 @@ pub struct Universe {
 impl Universe {
     pub fn new(rows: usize, cols: usize) -> Self {
         utils::set_panic_hook();
-        let mut cells: Vec<bool> = Vec::with_capacity(rows * cols);
-        for _ in 0..rows * cols {
-            cells.push(js_sys::Math::random() > 0.5);
+        let mut cells = FixedBitSet::with_capacity(rows * cols);
+        for i in 0..rows * cols {
+            cells.set(i, js_sys::Math::random() > 0.5);
         }
 
         Self { rows, cols, cells }
     }
 
-    pub fn cells(&self) -> *const bool {
-        self.cells.as_ptr()
+    pub fn cells(&self) -> *const u32 {
+        self.cells.as_slice().as_ptr()
     }
 
     pub fn tick(&mut self) {
@@ -40,8 +34,8 @@ impl Universe {
             let cell = &self.cells[index];
 
             match (cell, live_neighbor_count) {
-                (false, 3) => new_cells[index] = true,
-                (true, x) if (x < 2 || x > 3) => new_cells[index] = false,
+                (false, 3) => new_cells.set(index, true),
+                (true, x) if (x < 2 || x > 3) => new_cells.set(index, false),
                 _ => {}
             }
         }
@@ -75,21 +69,6 @@ impl Universe {
         }
 
         live_count
-    }
-
-    pub fn render(&self) -> String {
-        let mut result = String::new();
-
-        for row in 0..self.rows {
-            let cells = &self.cells[(row * self.cols)..((row + 1) * self.cols)]
-                .iter()
-                .map(|v| if *v { '◻' } else { '◼' })
-                .collect::<String>();
-
-            result += format!("{}\n", cells).as_str();
-        }
-
-        result
     }
 
     fn get_row_col(&self, index: usize) -> (usize, usize) {
